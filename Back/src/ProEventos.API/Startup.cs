@@ -5,7 +5,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using ProEventos.API.Data;
+using ProEventos.API.Context;
+using ProEventos.Application.Interfaces;
+using ProEventos.Application.Services;
+using ProEventos.Persistence.Interface;
+using ProEventos.Persistence.Repository;
 
 namespace ProEventos.API
 {
@@ -18,12 +22,13 @@ namespace ProEventos.API
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllers();
-            services.AddDbContext<DataContext>(
+            services.AddControllers()
+            .AddNewtonsoftJson(x =>x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+            services.AddDbContext<ProEventosContext>(
                 context => context.UseSqlite(Configuration.GetConnectionString("Default"))
             );
 
@@ -32,9 +37,12 @@ namespace ProEventos.API
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ProEventos.API", Version = "v1" });
             });
+
+            services.AddScoped<IEventoService, EventoService>();
+            services.AddScoped<IEventoRepository, EventoRepository>();
+           
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
